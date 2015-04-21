@@ -1,0 +1,4 @@
+dependencies {
+	compile group:'com.thetransactioncompany', name:'jsonrpc2-server', version:'1.11'
+	compile project(':core')
+}

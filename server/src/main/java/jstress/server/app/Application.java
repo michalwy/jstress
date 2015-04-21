@@ -1,0 +1,6 @@
+package jstress.server.app;
+
+public class Application {
+	public static void main(String[] args) {
+	}
+}
