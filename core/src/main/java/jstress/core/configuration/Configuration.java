@@ -4,6 +4,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import jstress.core.configuration.exceptions.ConfigurationExistsException;
 import jstress.core.configuration.exceptions.ConfigurationNotFoundException;
+import jstress.core.configuration.exceptions.IndexOutOfBoundsException;
+import jstress.core.configuration.exceptions.InvalidTypeException;
 
 public class Configuration extends Value {
 	private static ConcurrentHashMap<String, Configuration> _configurations 
@@ -50,6 +52,12 @@ public class Configuration extends Value {
 	@Override
 	public int asInt() {
 		return 0;
+	}
+
+	@Override
+	public Value getArrayElement(int index) throws InvalidTypeException,
+			IndexOutOfBoundsException {
+		return null;
 	}
 	
 }

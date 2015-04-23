@@ -7,6 +7,7 @@ import jstress.core.configuration.Value.Type;
 import jstress.core.configuration.exceptions.ConfigurationException;
 import jstress.core.configuration.exceptions.ConfigurationExistsException;
 import jstress.core.configuration.exceptions.ConfigurationNotFoundException;
+import jstress.core.configuration.exceptions.IndexOutOfBoundsException;
 import jstress.core.configuration.exceptions.InvalidTypeException;
 import jstress.core.configuration.exceptions.PropertyNotFoundException;
 
@@ -43,8 +44,13 @@ public class ConfigurationTest {
 
 		@Override
 		public int asInt() throws InvalidTypeException {
-			// TODO Auto-generated method stub
 			return 0;
+		}
+
+		@Override
+		public Value getArrayElement(int index) throws InvalidTypeException,
+				IndexOutOfBoundsException {
+			return null;
 		}
 		
 	}
@@ -56,6 +62,7 @@ public class ConfigurationTest {
 		Value value = Mockito.spy(new TestValue(provider));
 		Value stringValue = Mockito.spy(new TestValue(provider));
 		Value intValue = Mockito.spy(new TestValue(provider));
+		Value arrayValue = Mockito.spy(new TestValue(provider));
 
 		Mockito.when(stringValue.getType()).thenReturn(Type.STRING);
 		Mockito.when(stringValue.asString()).thenReturn("TestStringValue");
@@ -65,9 +72,15 @@ public class ConfigurationTest {
 		Mockito.when(intValue.asString()).thenThrow(new InvalidTypeException());
 		Mockito.when(intValue.asInt()).thenReturn(2020);
 		
+		Mockito.when(arrayValue.getType()).thenReturn(Type.ARRAY);
+		Mockito.when(arrayValue.getArrayElement(0)).thenReturn(stringValue);
+		Mockito.when(arrayValue.getArrayElement(1)).thenReturn(intValue);
+		Mockito.when(arrayValue.getArrayElement(2)).thenThrow(new IndexOutOfBoundsException());
+
 		Mockito.when(value.getType()).thenReturn(Type.OBJECT);
 		Mockito.when(value.getProperty("stringProperty")).thenReturn(stringValue);
 		Mockito.when(value.getProperty("intProperty")).thenReturn(intValue);
+		Mockito.when(value.getProperty("arrayProperty")).thenReturn(arrayValue);
 		Mockito.when(value.getProperty("anotherProperty")).thenThrow(new PropertyNotFoundException());
 
 		Mockito.when(provider.getRootObject()).thenReturn(value);
@@ -86,16 +99,33 @@ public class ConfigurationTest {
 	
 	@Test
 	public void positiveStringProperty() throws PropertyNotFoundException, InvalidTypeException {
-		Assert.assertEquals(_configuration.isInt("stringProperty"), false);
+		Assert.assertEquals(_configuration.isObject("stringProperty"), false);
+		Assert.assertEquals(_configuration.isArray("stringProperty"), false);
 		Assert.assertEquals(_configuration.isString("stringProperty"), true);
+		Assert.assertEquals(_configuration.isInt("stringProperty"), false);
+
 		Assert.assertEquals(_configuration.getString("stringProperty"), "TestStringValue");
 	}
 
 	@Test
 	public void positiveIntProperty() throws PropertyNotFoundException, InvalidTypeException {
-		Assert.assertEquals(_configuration.isInt("intProperty"), true);
+		Assert.assertEquals(_configuration.isObject("intProperty"), false);
+		Assert.assertEquals(_configuration.isArray("intProperty"), false);
 		Assert.assertEquals(_configuration.isString("intProperty"), false);
+		Assert.assertEquals(_configuration.isInt("intProperty"), true);
+
 		Assert.assertEquals(_configuration.getInt("intProperty"), 2020);
+	}
+
+	@Test
+	public void positiveArrayProperty() throws PropertyNotFoundException, InvalidTypeException, IndexOutOfBoundsException {
+		Assert.assertEquals(_configuration.isObject("arrayProperty"), false);
+		Assert.assertEquals(_configuration.isArray("arrayProperty"), true);
+		Assert.assertEquals(_configuration.isString("arrayProperty"), false);
+		Assert.assertEquals(_configuration.isInt("arrayProperty"), false);
+		
+		Assert.assertEquals(_configuration.get("arrayProperty").getString(0), "TestStringValue");
+		Assert.assertEquals(_configuration.get("arrayProperty").getInt(1), 2020);
 	}
 
 	@Test(expectedExceptions = ConfigurationExistsException.class)
@@ -128,5 +158,14 @@ public class ConfigurationTest {
 		_configuration.get("stringProperty").get("property");
 	}
 
+	@Test(expectedExceptions = InvalidTypeException.class)
+	public void negativeElementOfNonArray() throws ConfigurationException {
+		_configuration.get("stringProperty").get(0);
+	}
+
+	@Test(expectedExceptions = IndexOutOfBoundsException.class)
+	public void negativeArrayIndexOutOfBound() throws ConfigurationException {
+		_configuration.get("arrayProperty").get(2);
+	}
 
 }
